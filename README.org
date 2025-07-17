@@ -1,0 +1,110 @@
+#+TITLE: PostgreSQL Schema Management via Source Files
+
+* Philosophy
+
+Database schema change should be guided by the intent and semantics of
+data design; not just by tracking deltas through migrations. Migrations
+are a symptom of treating the database as an opaque artifact, rather
+than as a formal structure subject to revision through meaningful,
+verifiable edits.
+
+Just as the relational model separated the *what* from the *how*, a
+schema definition language should separate *intent* (the structure and
+semantics of data) from *execution* (how to transform one version into
+another). In this spirit, we use source files: declarative,
+version-controlled representations of schema state; as the interface
+for managing change.
+
+Migrations then become an implementation detail: automatically
+generated transformations, rather than manually written artifacts. One
+should not be concerned with writing migrations directly, as doing so
+often obscures the conceptual motivation behind changes.
+
+This approach draws on the principles of *data sublanguages* in
+the relational model: just as Codd envisioned a sublanguage for data
+manipulation embedded within a host programming language, so too
+should schema management be a sublayer within the broader lifecycle of
+software architecture; not a disconnected or procedural process.
+
+* About
+
+We maintain our schema in structured source files (SQL/plpgsql)
+committed to version control. From these, we generate the migrations
+required to bring a live database to the desired state.
+
+The philosophy echoes the original motivation of the relational model.
+
+#+BEGIN_QUOTE
+The universality of the data sublanguage lies in its descriptive
+ability (not its computing ability) -- E. F. Codd, A Relational Model
+of Data for Large Shared Data Banks, 1970
+#+END_QUOTE
+
+* How It Works
+
+This project uses a Nix flake to define two PostgreSQL environments:
+- A *local development database*, built from your source SQL files
+- A *mirrored copy of the remote database* (e.g. local or production)
+
+After applying changes to your local schema (via the source files),
+you can generate a migration by *diffing the local schema against the
+mirrored remote copy*. The result is a SQL migration file capturing
+the necessary changes.
+
+Please note that due to how diffs are generated, the resulting DDL
+statements may not always be ordered as expected. Review them before
+applying.
+
+* Usage
+
+**Typical Workflow**
+
+Open two terminal tabs:
+
+*** Terminal Tab #1 – Start the Database Environment
+
+#+BEGIN_SRC sh
+make pure-database   # Wipes any existing local DB state
+devenv up            # Starts the dev environment (e.g., containers, services)
+#+END_SRC
+
+Use *make database* instead if you want to preserve existing local state.
+
+*** Terminal Tab #2 – Boot, Setup, and Build Migration
+
+#+BEGIN_SRC sh
+make bootenv                               # Initializes Nix environment
+make setup                                 # Applies your SQL files to the local DB
+make build MIGRATION_NAME="add_user_table" # Diffs local vs. remote and generates migration
+#+END_SRC
+
+**Make Targets**
+
+Here's a summary of available *make* commands:
+
+| Target        | Description                                                                                                                                        |
+|---------------+----------------------------------------------------------------------------------------------------------------------------------------------------|
+| bootenv       | Starts the Nix environment. Run this before any other target (except clean).                                                                       |
+| clean         | Wipes all local PostgreSQL state. Use if you need a fresh start.                                                                                   |
+| pure-database | Starts a *fresh* local PostgreSQL instance, deleting all previous data. Hangs in foreground.                                                       |
+| database      | Starts local PostgreSQL without deleting existing data. Hangs in foreground.                                                                       |
+| setup         | Applies your SQL schema files to the local PostgreSQL. See the flake.nix for environment configuration.                                            |
+| build         | Generates a migration file by diffing the local database (after setup) against a remote shadow database (e.g., Supabase). Requires MIGRATION_NAME. |
+| help          | Prints a summary of all make targets.                                                                                                              |
+
+* Historical Notes
+
+SQL was intended as a *data sublanguage*, that is, a layer within a larger
+computational environment. As originally conceived, the sublanguage
+described *relations* and their constraints, but not the entire
+application behavior. The distinction between description and
+computation has been blurred in most modern tooling, where migrations
+are hand-written code.
+
+By returning to a source-driven model, we reintroduce that separation
+of concerns: schema design remains declarative, while migration
+generation remains mechanical.
+
+* Caveats
+Tools like migra (which is used by Supabase) do not diff (SQL)
+comments and domains for example. So be mindful about those.
