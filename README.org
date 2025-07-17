@@ -57,7 +57,7 @@ applying.
 
 * Usage
 
-**Typical Workflow**
+**Typical Workflow
 
 Open two terminal tabs:
 
@@ -78,7 +78,7 @@ make setup                                 # Applies your SQL files to the local
 make build MIGRATION_NAME="add_user_table" # Diffs local vs. remote and generates migration
 #+END_SRC
 
-**Make Targets**
+**Make Targets
 
 Here's a summary of available *make* commands:
 
@@ -89,7 +89,7 @@ Here's a summary of available *make* commands:
 | pure-database | Starts a *fresh* local PostgreSQL instance, deleting all previous data. Hangs in foreground.                                                       |
 | database      | Starts local PostgreSQL without deleting existing data. Hangs in foreground.                                                                       |
 | setup         | Applies your SQL schema files to the local PostgreSQL. See the flake.nix for environment configuration.                                            |
-| build         | Generates a migration file by diffing the local database (after setup) against a remote shadow database (e.g., Supabase). Requires MIGRATION_NAME. |
+| build         | Generates a migration file by diffing the local database (after setup) against a remote shadow database (e.g. Supabase). Requires MIGRATION_NAME. |
 | help          | Prints a summary of all make targets.                                                                                                              |
 
 * Historical Notes
@@ -108,3 +108,7 @@ generation remains mechanical.
 * Caveats
 Tools like migra (which is used by Supabase) do not diff (SQL)
 comments and domains for example. So be mindful about those.
+
+* TODO
+- [ ] Package migra or make it the diff-tool modular
+- [ ] Declarative docker definitions
