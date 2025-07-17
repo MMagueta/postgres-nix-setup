@@ -89,6 +89,10 @@
                   "shared_preload_libraries" = "pg_cron";
                   "cron.database_name" = "supabase";
                   "cron.timezone" = "UTC";
+                  # https://github.com/okbob/plpgsql_check?tab=readme-ov-file#passive-mode-only-recommended-for-development-or-preproduction
+                  "plpgsql_check.mode" = "every_start";
+                  "plpgsql_check.show_nonperformance_warnings" = "true";
+                  "plpgsql_check.show_performance_warnings" = "true";
                 };
 
                 initialScript = ''
